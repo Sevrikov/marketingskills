@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AI Content Factory Operator</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div>
+        <h1>AI Content Factory</h1>
+        <p id="healthLine">Backend: checking...</p>
+      </div>
+      <div class="api-box">
+        <label class="api-control">
+          API
+          <input id="apiBaseInput" value="http://localhost:8000" />
+        </label>
+        <button id="apiDocsBtn" type="button">API docs</button>
+      </div>
+    </header>
+
+    <main class="layout">
+      <section class="panel queue-panel">
+        <div class="panel-head">
+          <h2>Queue</h2>
+          <button id="refreshBtn" type="button">Refresh</button>
+        </div>
+
+        <form id="createTaskForm" class="task-form">
+          <select id="taskTypeInput" aria-label="Task type">
+            <option value="seo_article">SEO article</option>
+            <option value="product_card">Product card</option>
+            <option value="video_brief">Video brief</option>
+            <option value="research">Research</option>
+          </select>
+          <input id="topicInput" placeholder="Topic or product" required />
+          <button type="submit">Create</button>
+        </form>
+
+        <div class="toolbar">
+          <button id="syncSkillsBtn" type="button">Sync skills</button>
+          <button id="loadPromptsBtn" type="button">Registry</button>
+        </div>
+
+        <div id="taskList" class="task-list"></div>
+      </section>
+
+      <section class="panel detail-panel">
+        <div class="panel-head">
+          <div>
+            <h2 id="detailTitle">No task selected</h2>
+            <p id="detailMeta">Select a task from the queue.</p>
+          </div>
+          <div class="actions">
+            <button id="enqueueBtn" type="button" disabled>Enqueue</button>
+            <button id="notifyBtn" type="button" disabled>Notify review</button>
+            <button id="approveBtn" type="button" disabled>Approve</button>
+            <button id="rewriteBtn" type="button" disabled>Rewrite</button>
+            <button id="exportBtn" type="button" disabled>Export package</button>
+          </div>
+        </div>
+
+        <div id="qaStrip" class="qa-strip"></div>
+
+        <nav class="tabs" aria-label="Task detail tabs">
+          <button class="tab active" data-tab="drafts" type="button">Drafts</button>
+          <button class="tab" data-tab="articleStudio" type="button">Article Studio</button>
+          <button class="tab" data-tab="productProfile" type="button">Product card</button>
+          <button class="tab" data-tab="research" type="button">Research</button>
+          <button class="tab" data-tab="events" type="button">Events</button>
+          <button class="tab" data-tab="packages" type="button">Packages</button>
+          <button class="tab" data-tab="market" type="button">Market</button>
+          <button class="tab" data-tab="opportunities" type="button">Opportunities</button>
+          <button class="tab" data-tab="scheduler" type="button">Scheduler</button>
+          <button class="tab" data-tab="settings" type="button">API settings</button>
+          <button class="tab" data-tab="registry" type="button">Registry</button>
+        </nav>
+
+        <section id="draftsPanel" class="tab-panel active"></section>
+        <section id="articleStudioPanel" class="tab-panel"></section>
+        <section id="productProfilePanel" class="tab-panel"></section>
+        <section id="researchPanel" class="tab-panel"></section>
+        <section id="eventsPanel" class="tab-panel"></section>
+        <section id="packagesPanel" class="tab-panel"></section>
+        <section id="marketPanel" class="tab-panel"></section>
+        <section id="opportunitiesPanel" class="tab-panel"></section>
+        <section id="schedulerPanel" class="tab-panel"></section>
+        <section id="settingsPanel" class="tab-panel"></section>
+        <section id="registryPanel" class="tab-panel"></section>
+      </section>
+    </main>
+
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <script src="./app.js"></script>
+  </body>
+</html>

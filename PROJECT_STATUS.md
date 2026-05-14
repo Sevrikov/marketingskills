@@ -1,0 +1,628 @@
+# Project Status
+
+*Last updated: 2026-05-08*
+
+## Current Stage
+
+Development is in Sprint 0 foundation. Current active queue item: pain-profile backend followed by infographic data-pack backend and optional real provider smoke testing from API Settings.
+
+## Completed
+
+- Initialized Git repository.
+- Added monorepo scaffold:
+  - `backend/`
+  - `frontend/`
+  - `workers/`
+  - `.agents/`
+  - `docs/`
+- Added backend FastAPI placeholder:
+  - `backend/app/main.py`
+  - `backend/app/config.py`
+  - `backend/app/worker.py`
+- Added Docker Compose scaffold:
+  - backend
+  - worker
+  - PostgreSQL
+  - Redis
+  - MinIO
+- Added `.env.example`.
+- Added `.gitignore`.
+- Added project README.
+- Added initial product marketing context.
+- Added initial ecommerce skills:
+  - `ecommerce-product-normalization`
+  - `ecommerce-aeo-product-description`
+  - `ecommerce-video-brief`
+  - `ecommerce-infographic-brief`
+  - `ecommerce-customer-pain-research`
+- Added LLM adapter layer:
+  - mock adapter by default;
+  - Gemini adapter only when `LLM_PROVIDER=gemini` is explicitly set;
+  - temporary debug endpoints for local adapter testing.
+- Added database foundation:
+  - SQLAlchemy base/session;
+  - Alembic config;
+  - initial migration for `products` and `content_tasks`.
+- Added Products API:
+  - create/list/get/update.
+- Added Content Tasks API:
+  - create/list/get/status update.
+- Added initial task state machine.
+- Added task event log:
+  - `task_events` model/table;
+  - event on task creation;
+  - event on status transition;
+  - `GET /api/tasks/{task_id}/events`.
+- Added queue foundation:
+  - task queue abstraction;
+  - RQ implementation;
+  - fake queue for API tests;
+  - sync queue for local experiments;
+  - `POST /api/tasks/{task_id}/enqueue`;
+  - worker job that moves a queued task through the safe MVP pipeline to `waiting_approval`.
+- Added adapter contracts beyond LLM:
+  - `ResearchAdapter`;
+  - `StorageAdapter`;
+  - `CMSAdapter`;
+  - `MediaAdapter`;
+  - `SearchConsoleAdapter`.
+- Added mock adapter implementations and factories for all adapter contracts.
+- Added prompt registry:
+  - `prompt_templates` model/table;
+  - create/list/get/update API;
+  - active-template lookup by stable prompt key;
+  - seed command for baseline ecommerce prompts.
+- Added skill registry loader:
+  - `agent_skills` model/table;
+  - local `.agents/skills/*/SKILL.md` scanner;
+  - simple frontmatter parser for skill metadata;
+  - sync service that upserts active skills and archives removed skills;
+  - `GET /api/skills`, `GET /api/skills/by-name/{name}`, `POST /api/skills/sync`;
+  - `python -m app.cli sync-skills` command;
+  - Docker mount for `.agents` as read-only runtime skill source.
+- Added first draft-generation pipeline:
+  - `content_drafts` model/table;
+  - initial draft generation from active prompt template;
+  - active skill context injection into draft prompt;
+  - critic prompt call;
+  - rewrite prompt call;
+  - final draft stored for human approval;
+  - `GET /api/tasks/{task_id}/drafts`.
+- Added approval workflow hardening:
+  - dedicated approval payload/result schemas;
+  - `POST /api/tasks/{task_id}/approve`;
+  - `POST /api/tasks/{task_id}/request-rewrite`;
+  - approval decisions logged to task events;
+  - non-waiting tasks are rejected from approval endpoints.
+- Added research adapter integration:
+  - `content_research_reports` model/table;
+  - worker calls `ResearchAdapter` before draft generation;
+  - research report markdown is injected into the initial draft prompt;
+  - research sources and normalized fields are stored as JSON;
+  - `GET /api/tasks/{task_id}/research`.
+- Added frontend operator console skeleton:
+  - static HTML/CSS/JS app in `frontend/`;
+  - queue view and task creation;
+  - task details with drafts, research, events and registry tabs;
+  - enqueue, approve and rewrite actions;
+  - local API base selector;
+  - backend CORS config for local console usage.
+- Added local runtime/test setup:
+  - local CPython 3.12 runtime can live in `.tools/`;
+  - project virtual environment lives in `.venv/`;
+  - backend package installation fixed via explicit setuptools package discovery;
+  - SQLite connect args added for local threaded FastAPI usage;
+  - `python -m app.cli init-db`;
+  - `scripts/test-backend.ps1`;
+  - `scripts/run-backend-local.ps1`;
+  - README commands for Windows ExecutionPolicy-safe script execution.
+- Added Google/Gemini grounded research provider:
+  - `GeminiResearchAdapter`;
+  - `RESEARCH_PROVIDER=gemini` switch;
+  - `GEMINI_RESEARCH_MODEL` setting;
+  - Google Search grounding tool support through `google-genai`;
+  - grounded source extraction from Gemini response metadata;
+  - `/debug/research-provider`;
+  - README instructions for controlled local Gemini research tests.
+- Added frontend operator QA polish:
+  - API docs button;
+  - QA status strip with status, research count, draft count and current step;
+  - final draft is shown first and visually highlighted;
+  - critique draft is visually separated;
+  - safer action handling with busy-state button disabling;
+  - clearer API error messages in toast notifications;
+  - automatic selected-task refresh after create, enqueue, approve, rewrite and skill sync.
+- Added Google API smoke-test safety harness:
+  - `ENABLE_GOOGLE_SMOKE_TESTS=false` default;
+  - `python -m app.cli smoke-gemini-research`;
+  - `scripts/smoke-gemini-research.ps1`;
+  - one-process env override for `RESEARCH_PROVIDER=gemini`;
+  - optional smoke model override;
+  - clean external API error reporting without printing secrets.
+- Added publish-package export for approved content:
+  - `publish_packages` model/table;
+  - `POST /api/tasks/{task_id}/export-package`;
+  - `GET /api/tasks/{task_id}/packages`;
+  - package markdown with final content, research summary and approval metadata;
+  - structured package JSON with task, content, research and workflow lineage;
+  - frontend `Packages` tab and export action for approved tasks.
+- Added safer local LLM provider default:
+  - `LLM_PROVIDER=mock` default even when `GOOGLE_API_KEY` exists;
+  - real content generation requires explicit `LLM_PROVIDER=gemini`;
+  - adapter tests cover both mock-default and Gemini opt-in modes.
+- Added infographic intelligence architecture:
+  - `docs/INFOGRAPHIC_INTELLIGENCE_DESIGN_PIPELINE.md`;
+  - structured `infographic_data_pack` schema;
+  - agent roles for data collection, deep research, normalization, market analysis, visual strategy, browser design operation and QA;
+  - prompt library for Gemini research, source extraction, data normalization, design brief, browser design-agent prompt, QA, revision and CMS/social export;
+  - planned DB models and API surface for infographic projects, data packs, design briefs, assets and reviews;
+  - local skill `ecommerce-infographic-brief` for repeatable prompt-chain generation.
+- Added video infographic storyboard architecture:
+  - `docs/VIDEO_INFOGRAPHIC_STORYBOARD_PIPELINE.md`;
+  - video formats for product Shorts, market-pulse videos, competitor battles, buyer-guide explainers and article companion videos;
+  - storyboard JSON schema with scene-level data refs, source ids, voiceover, on-screen text and provider prompt bases;
+  - prompt library for video scope, deep research, data normalization, hooks, script briefs, storyboards, reference frames, Veo adapters, Seedance adapters, assembly, QA and publication packs;
+  - provider strategy that keeps exact numbers/tables/source ids in overlay/editing steps when model text fidelity is risky;
+  - updated `ecommerce-video-brief` skill for video infographic workflows.
+- Added customer pain research layer:
+  - `docs/CUSTOMER_PAIN_RESEARCH_LAYER.md`;
+  - local skill `ecommerce-customer-pain-research`;
+  - `pain_profile` schema for primary pain, buyer words, use contexts, trigger events, proof map, objections and channel guidance;
+  - prompt library for pain scope, deep pain research, profile normalization, material injection and pain QA;
+  - updated product description, infographic and video skills to require pain integration when confirmed;
+  - seed prompts now include customer-pain discovery and critic checks for pain-to-proof mapping;
+  - research query builder now asks for customer pain, trigger events, objections, alternatives and proof points.
+- Added program map and API key matrix:
+  - `docs/PROGRAM_MAP_AND_API_KEYS.md`;
+  - module map with product, research, pain, content, price, infographic, video, approval, CMS and scheduler links;
+  - testing phases from local mock to Gemini, Tavily, Viber, CMS, video generation and observability;
+  - minimal API key list for next development tests.
+- Added functional inventory and local mock stability suite:
+  - `docs/FUNCTIONAL_INVENTORY_AND_MOCK_TEST_PLAN.md`;
+  - `backend/tests/test_mock_functional_smoke.py`;
+  - `scripts/test-local-mock-suite.ps1`;
+  - broad mock smoke covers product, skills, prompts, product profile, opportunities, worker draft pipeline, approval, package export, CMS preview, media brief, price trends, digest and scheduler.
+- Added realistic product-card smoke scenario:
+  - `backend/tests/test_realistic_product_card_smoke.py`;
+  - `scripts/test-realistic-product-card.ps1`;
+  - fixed fixture from Elektronom product URL for ALTEK ALT-63 portable solar panel;
+  - scenario covers product creation, generated content profile, product-card pipeline, pain-aware mock research, approval, publish package, CMS preview and media brief.
+- Added realistic solar-category smoke scenario:
+  - `backend/tests/test_realistic_solar_category_smoke.py`;
+  - `scripts/test-realistic-solar-category.ps1`;
+  - fixed fixtures from Elektronom mobile solar chargers category JSON-LD;
+  - scenario covers multi-product profile generation, price group creation, monitored sources, market index and content opportunity discovery.
+- Added realistic solar-category article smoke scenario:
+  - `backend/tests/test_realistic_solar_article_smoke.py`;
+  - `scripts/test-realistic-solar-article.ps1`;
+  - scenario covers group market context, content opportunity discovery, SEO article task generation, pain-aware mock research, drafts, approval, publish package, CMS article preview and media brief.
+- Added article production architecture:
+  - `docs/ARTICLE_PRODUCTION_PIPELINE.md`;
+  - local skill `ecommerce-article-production-brief`;
+  - article data pack, article ТЗ, image ТЗ, image/infographic asset slots, asset QA and CMS insertion plan;
+  - next backend target is article production MVP with mock article brief/image brief and publish package asset slots.
+- Added Article Studio image asset MVP:
+  - `article_assets` model/table;
+  - `GET /api/tasks/{task_id}/article-assets`;
+  - `POST /api/tasks/{task_id}/article-assets/generate`;
+  - `POST /api/tasks/{task_id}/article-assets/{asset_id}/status`;
+  - mock asset generation from final-draft placeholders such as `{{image:hero}}` and `{{infographic:comparison}}`;
+  - generated assets store brief JSON, mock storage URI, alt text, caption, QA JSON and review status;
+  - Article Studio UI now has `Prepare image assets`, `Approve asset` and `Reject asset`;
+  - publish package JSON and Markdown now include article assets and approved assets.
+- Added CMS image placeholder insertion:
+  - CMS preview transforms article asset slots into `<figure>` blocks;
+  - approved mock assets render as upload/generator placeholders until a real storage URL exists;
+  - pending/rejected assets stay visible as editorial placeholders instead of fake images;
+  - CMS payload now carries `media_assets_json` with insertion state for each article asset;
+  - Article Studio asset cards now show a visual empty image/infographic block with loading/review state.
+- Added article image upload/generator contract:
+  - `ImageGenerationAdapter` contract;
+  - deterministic `MockImageGenerationAdapter` returning safe SVG data URIs;
+  - `IMAGE_GENERATION_PROVIDER=mock` and `ENABLE_REAL_IMAGE_GENERATION=false` settings;
+  - `POST /api/tasks/{task_id}/article-assets/{asset_id}/generate-image`;
+  - `POST /api/tasks/{task_id}/article-assets/{asset_id}/upload`;
+  - image generation/upload resets asset status to `generated` for human review;
+  - Article Studio can attach a URL or generate a mock image from an asset card;
+  - renderable URLs/data URIs are previewed directly in Article Studio and CMS preview.
+- Added Gemini image provider wiring:
+  - `GeminiImageGenerationAdapter`;
+  - selected through `IMAGE_GENERATION_PROVIDER=gemini`;
+  - real image calls require `ENABLE_REAL_IMAGE_GENERATION=true` and `GOOGLE_API_KEY`;
+  - default model `gemini-3.1-flash-image-preview`;
+  - fallback list `GEMINI_IMAGE_MODELS`;
+  - Gemini inline image parts are converted to `data:<mime>;base64,...` URIs for Article Studio and CMS preview;
+  - `/debug/image-generation-provider` shows the active provider and model.
+- Added API/settings manager:
+  - `runtime_settings` model/table;
+  - `GET /api/runtime-settings`;
+  - `PUT /api/runtime-settings`;
+  - settings sections for Secrets, Providers, Models, Safety and Viber;
+  - write-only secret handling for Google, Tavily and Viber tokens;
+  - runtime overrides for worker research/content adapters, content opportunities, image generation, CMS preview and Viber notifications;
+  - operator console `API settings` tab with provider/model selectors and secret inputs.
+- Added Viber-first approval notification layer:
+  - neutral `NotificationAdapter` contract;
+  - mock notification adapter for local development;
+  - Viber notification adapter with text message, reviewer IDs and reply keyboard actions;
+  - `POST /api/tasks/{task_id}/notify-approval`;
+  - `POST /api/webhooks/viber`;
+  - webhook commands for `approve:{task_id}` and `rewrite:{task_id}`;
+  - task events for notification send and webhook receipt;
+  - operator console `Notify review` action.
+- Added publication destination dry-run foundation:
+  - `CMSAdapter.prepare_payload` contract for no-side-effect payload building;
+  - `publication_previews` model/table;
+  - `POST /api/tasks/packages/{package_id}/publication-preview`;
+  - `GET /api/tasks/packages/{package_id}/publication-previews`;
+  - package-to-CMS transformation with draft title, HTML body, original markdown, SEO metadata and schema.org `Article`;
+  - task event `publication_preview_created`;
+  - operator console `Prepare CMS payload` action inside package records.
+- Added CMS publish safety gate:
+  - `CMS_PROVIDER` and `CMS_DESTINATION_TYPE` settings;
+  - `/debug/cms-provider`;
+  - `POST /api/tasks/publication-previews/{preview_id}/publish`;
+  - real publishing remains blocked by `ENABLE_REAL_PUBLISHING=false`;
+  - publish requires exact confirmation phrase `publish:{preview_id}`;
+  - active CMS provider must match the provider that created the preview;
+  - publish result is stored on `publication_previews.result_json`;
+  - task event `publication_published`;
+  - approved product content profiles are embedded into CMS payloads as `product_card_json`;
+  - schema.org `Article` is linked with schema.org `Product` when an approved product profile exists;
+  - `docs/CMS_PUBLISHING_SAFETY.md`;
+  - tests for default block, confirmation gate, successful mock publish and product-profile payload.
+- Added media brief export:
+  - `media_briefs` model/table;
+  - `POST /api/tasks/packages/{package_id}/media-brief`;
+  - `GET /api/tasks/packages/{package_id}/media-briefs`;
+  - `video_brief_pack` structured JSON and markdown;
+  - long YouTube video brief;
+  - Shorts/Reels/TikTok vertical brief;
+  - Google Veo prompt pack with scene prompts and negative prompts;
+  - hard safety marker keeping real video generation disabled;
+  - task event `media_brief_created`;
+  - operator console `Prepare video brief` action inside package records.
+- Resolved Gemini model-limit selection for current AI Studio project:
+  - parsed local AI Studio rate-limit export;
+  - documented current model limits in `docs/GEMINI_RATE_LIMITS.md`;
+  - switched content and critic defaults to real-probed `gemini-2.5-flash-lite`;
+  - switched grounded research default to `gemini-2.5-flash-lite`;
+  - kept exhausted or zero-limit models out of default prompt seeds;
+  - added smoke fallback matrix through `GEMINI_SMOKE_MODELS`;
+  - confirmed a real grounded Gemini smoke call on `gemini-2.5-flash-lite`.
+- Added local Gemini quota governor:
+  - `GeminiQuotaGovernor` JSON daily ledger;
+  - configurable `GEMINI_DAILY_MODEL_LIMITS`;
+  - local success/failure accounting by model;
+  - local block for `429 RESOURCE_EXHAUSTED`;
+  - local cooldown for `503 UNAVAILABLE`;
+  - Gemini content and grounded research adapters fallback through configured model candidates;
+  - `python -m app.cli gemini-quota-status` command.
+- Added real Viber bot onboarding runbook and setup helpers:
+  - `docs/VIBER_BOT_RUNBOOK.md`;
+  - `VIBER_WEBHOOK_PUBLIC_URL` and `VIBER_WEBHOOK_EVENT_TYPES` settings;
+  - Viber `set_webhook` payload builder with public HTTPS validation;
+  - `python -m app.cli viber-webhook-payload`;
+  - guarded `python -m app.cli viber-set-webhook --confirm-real-call`;
+  - guarded `python -m app.cli viber-remove-webhook --confirm-real-call`;
+  - tests for webhook setup payload and URL safety.
+- Added hybrid source collection foundation for marketing research:
+  - neutral `SourceProvider` contract;
+  - deterministic `MockSourceProvider`;
+  - `TavilySourceProvider` with AI-ready snippets/raw content support;
+  - `SOURCE_PROVIDER`, `TAVILY_API_KEY` and source collection settings;
+  - source corpus formatting before `ResearchAdapter` synthesis;
+  - source corpus persistence inside research report `normalized_json`;
+  - soft-failure mode through `SOURCE_COLLECTION_REQUIRED=false`;
+  - `docs/SOURCE_PROVIDER_STRATEGY.md`;
+  - tests for provider contracts, Tavily parsing and source corpus propagation.
+- Added browser/JS price monitoring foundation:
+  - `monitored_sources` model/table;
+  - `price_snapshots` model/table;
+  - generic JavaScript price extractor;
+  - `PriceMonitorAdapter` contract;
+  - deterministic `MockPriceMonitorAdapter`;
+  - `PlaywrightPriceMonitorAdapter` boundary behind `PRICE_MONITOR_PROVIDER=playwright`;
+  - price monitor API for source CRUD, capture and snapshot listing;
+  - manual due-source runner through `POST /api/price-monitor/run-once`;
+  - `GET /api/price-monitor/changes`;
+  - `python -m app.cli run-price-monitor-once`;
+  - `price_change_events` model/table;
+  - `is_active`, `check_interval_minutes`, `next_check_at` and `last_checked_at`;
+  - `docs/PRICE_MONITORING.md`;
+  - tests for create/capture/list/run-once/change-event flow.
+- Added market price intelligence foundation:
+  - `price_groups` model/table;
+  - `price_market_indexes` model/table;
+  - `price_trend_events` model/table;
+  - source grouping fields on `monitored_sources`;
+  - market index aggregation: min/max/avg/median, top-position average and availability rate;
+  - mass trend detection for `mass_price_drop` and `mass_price_increase`;
+  - API for groups, market indexes and trend events;
+  - tests for group aggregation and trend event creation.
+- Added notification policy foundation for market trends:
+  - `notification_policies` model/table;
+  - policy thresholds for severity, affected source count and percent change;
+  - delivery modes `immediate`, `digest` and `stored_only`;
+  - evaluation of pending `price_trend_events`;
+  - trend `notify_status` transitions to `ready_immediate`, `queued_digest` or `suppressed`;
+  - API for policy create/list/evaluate;
+  - tests for digest selection and suppression.
+- Added market trend digest delivery:
+  - `MarketTrendDigestNotificationRequest`;
+  - mock digest delivery;
+  - Viber text digest payload;
+  - `POST /api/price-monitor/trend-digests/send`;
+  - `queued_digest` trend events move to `sent_digest`;
+  - delivery metadata is stored on trend events;
+  - tests for digest delivery flow.
+- Added immediate market trend alerts:
+  - `POST /api/price-monitor/trend-alerts/send`;
+  - `ready_immediate` trend events move to `sent_immediate`;
+  - immediate delivery metadata is stored on trend events;
+  - tests for immediate alert delivery flow.
+- Added market digest batching:
+  - `market_digest_batches` model/table;
+  - `POST /api/price-monitor/trend-digests/run-batch`;
+  - `GET /api/price-monitor/trend-digests/batches`;
+  - `python -m app.cli run-market-digest-once`;
+  - batch delivery metadata is stored;
+  - trend events link back to batch through `digest_batch_id`;
+  - tests for batch creation and delivery flow.
+- Added shared scheduler foundation for recurring operations:
+  - `scheduled_jobs` model/table;
+  - `scheduled_job_runs` model/table;
+  - default job registry for due price checks, trend policy evaluation, immediate alerts and digest batches;
+  - `POST /api/scheduler/jobs`;
+  - `GET /api/scheduler/jobs`;
+  - `PATCH /api/scheduler/jobs/{job_key}`;
+  - `POST /api/scheduler/jobs/{job_key}/run-now`;
+  - `POST /api/scheduler/run-due`;
+  - `GET /api/scheduler/runs`;
+  - `python -m app.cli run-scheduler-once`;
+  - `python -m app.cli run-scheduler-loop`;
+  - run history with trigger, status, timestamps, summary JSON and errors;
+  - unsupported future job types are rejected until executors exist;
+  - `docs/SCHEDULER.md`;
+  - tests for default jobs, manual run, due run, inactive skip and unsupported job types.
+- Added operator console market and scheduler views:
+  - `Market` tab with metrics, groups, sources, trend events, policies and digest batches;
+  - market actions for due price monitor, policy evaluation, immediate alerts and digest batch run;
+  - mini-forms for creating price groups, monitored sources and notification policies;
+  - latest market indexes displayed per group;
+  - `Scheduler` tab with jobs, run-now buttons, run-due action and run history;
+  - API base can be set through `?api=http://host:port` for local UI smoke tests;
+  - table, metric and mini-form UI styles.
+- Added content opportunity discovery:
+  - `content_opportunities` model/table;
+  - `POST /api/content-opportunities/discover`;
+  - `GET /api/content-opportunities`;
+  - `POST /api/content-opportunities/{opportunity_id}/create-task`;
+  - discovery scopes: product, price group, brand, category or custom query;
+  - source collection through `SourceProvider`;
+  - research synthesis through `ResearchAdapter`;
+  - topic intent, priority score, H1, outline, reason, sources and research summary;
+  - one-click creation of `seo_article` tasks;
+  - operator console `Opportunities` tab;
+  - `docs/CONTENT_OPPORTUNITIES.md`;
+  - tests for product discovery, group discovery, listing, task creation and missing scopes.
+- Added structured product content profiles:
+  - `product_content_profiles` model/table;
+  - `GET /api/products/{product_id}/content-profile`;
+  - `POST /api/products/{product_id}/content-profile/generate`;
+  - `PATCH /api/products/{product_id}/content-profile`;
+  - `POST /api/products/{product_id}/content-profile/approve`;
+  - generated product title, short description and long AEO description;
+  - SEO title, meta description and alt text suggestions;
+  - specifications JSON with known facts, missing fields and research-required fields;
+  - FAQ JSON and schema.org `Product` JSON;
+  - operator console `Product card` tab with generate/regenerate/approve actions;
+  - `docs/PRODUCT_CONTENT_PROFILES.md`;
+  - tests for generate/get/patch/approve flow.
+- Added basic tests:
+  - health endpoint;
+  - products API;
+  - content tasks API;
+  - state machine transitions.
+  - task event history.
+  - enqueue endpoint with fake queue.
+  - adapter contracts.
+  - prompt templates API.
+  - prompt seed loader.
+  - skill registry sync.
+  - agent skills API.
+  - draft generation pipeline.
+  - task drafts API.
+  - approval API.
+  - research report persistence.
+  - task research API.
+  - Gemini research adapter with fake client.
+  - Gemini quota governor and fallback behavior.
+  - Viber webhook setup payload validation.
+  - Source provider contracts and source corpus propagation.
+  - Price monitor source capture flow.
+  - Market price index and trend detection.
+  - Notification policy evaluation for market trend events.
+  - Market trend digest delivery.
+  - Immediate market trend alerts.
+  - Market digest batching.
+
+## Verification
+
+File structure and Git status were checked.
+
+Runtime verification is blocked locally because:
+
+- system `python` is not available in PATH;
+- Windows `py` launcher still points to a broken Store Python;
+- `docker` is not available in PATH;
+- no bundled Codex workspace runtime is configured.
+
+Runtime workaround:
+
+- downloaded local CPython 3.12.10 NuGet runtime into `.tools/`;
+- created `.venv`;
+- installed backend dependencies;
+- backend tests now run through `scripts/test-backend.ps1`.
+
+Verified:
+
+- `pytest tests`: 114 passed;
+- `ruff check .`: passed;
+- `node --check frontend/app.js`: passed.
+- `scripts/test-local-mock-suite.ps1`: passed with 114 backend tests and secret scan clean.
+- `scripts/test-realistic-product-card.ps1`: passed for captured Elektronom ALTEK ALT-63 fixture.
+- `scripts/test-realistic-solar-category.ps1`: passed for captured Elektronom mobile solar chargers category fixtures.
+- `scripts/test-realistic-solar-article.ps1`: passed for realistic solar-category SEO article flow.
+- local API E2E flow after frontend polish:
+  - health ok;
+  - create task ok;
+  - enqueue ok;
+  - task reached `waiting_approval`;
+  - 1 research report;
+  - 3 drafts: initial, critique, final;
+  - 11 task events.
+- Google/Gemini smoke test:
+  - `gemini-2.5-flash`: reached Google API, returned `503 UNAVAILABLE` model high demand;
+  - `gemini-2.0-flash`: reached Google API, returned `429 RESOURCE_EXHAUSTED` quota/free-tier limit;
+  - no API key was printed.
+- local API E2E flow after publish-package export:
+  - debug LLM provider reported `mock`;
+  - create task ok;
+  - enqueue ok;
+  - task reached `waiting_approval`;
+  - approve ok;
+  - export package ok;
+  - package status `ready`;
+  - package markdown contained final content;
+  - package JSON contained workflow lineage;
+  - 1 grounded/mock research source included.
+- local API E2E flow after Viber-first notification adapter:
+  - debug notification provider reported `mock`;
+  - create task ok;
+  - enqueue ok;
+  - task reached `waiting_approval`;
+  - approval notification recorded through mock adapter;
+  - Viber webhook simulation processed `approve:{task_id}`;
+  - final task status became `approved`;
+  - final event was `approval_webhook_received`.
+- local API E2E flow after publication dry-run:
+  - create task ok;
+  - enqueue ok;
+  - task reached `waiting_approval`;
+  - approve ok;
+  - export package ok;
+  - CMS publication preview created with `mock-cms`;
+  - preview operation was `create_draft`;
+  - generated payload included HTML content and schema.org `Article`;
+  - listing previews returned the created preview.
+- local API E2E flow after media brief export:
+  - create task ok;
+  - enqueue ok;
+  - task reached `waiting_approval`;
+  - approve ok;
+  - export package ok;
+  - media brief created with status `brief_ready`;
+  - deliverables included `long_video`, `vertical_short` and `veo_prompt_pack`;
+  - real video generation stayed disabled;
+  - listing media briefs returned the created brief.
+- Gemini model-limit verification:
+  - AI Studio snapshot showed `gemini-2.5-flash` at `21 / 20` RPD, so it is avoided for now;
+  - `gemini-2.5-pro`, `gemini-3.1-pro`, image and Veo models showed zero usable limits;
+  - `gemini-3.1-flash-lite` display name has quota in AI Studio, but the executable API id is `gemini-3.1-flash-lite-preview`, which returned temporary `503`;
+  - `gemini-2.5-flash-lite` is the current real-probed default for content, critic and research;
+  - `gemini-2.5-flash-lite` real smoke succeeded with Google Search grounding;
+  - smoke output returned 6929 markdown chars and 19 grounded sources.
+
+Gemini test key handling:
+
+- API keys must not be committed.
+- Use local `.env` only.
+- If a key was pasted into chat or logs, rotate it before continued use.
+
+## Next Recommended Tasks
+
+1. Implement `P0-044`: pain profile backend.
+2. Implement `P0-040`: infographic projects and data-pack backend.
+3. Implement `P0-042`: video infographic projects and storyboard backend.
+4. Optionally run one guarded Gemini image smoke test after confirming the active key has image quota.
+5. Continue with scheduler executors for future stock sync and supplier price sync.
+
+Current completed backlog:
+
+- `P0-001`: repository and project structure.
+- `P0-002`: FastAPI backend placeholder.
+- `P0-003`: PostgreSQL/Alembic model foundation.
+- `P0-004`: Products API.
+- `P0-005`: Content Tasks API.
+- `P0-006`: task state machine and event log.
+- `P0-007`: queue worker integration foundation.
+- `P0-008`: adapter interfaces beyond LLM.
+- `P0-009`: prompt registry.
+- `P0-010`: skill registry loader.
+- `P0-011`: first draft-generation pipeline.
+- `P0-012`: approval workflow hardening.
+- `P0-013`: research adapter integration for product/content drafts.
+- `P0-014`: frontend operator console skeleton.
+- `P0-015`: local runtime setup and full test execution.
+- `P0-016`: Google/Gemini research provider adapter.
+- `P0-017`: frontend polish and real operator QA loop.
+- `P0-018`: first Google API smoke tests behind explicit safety flags.
+- `P0-019`: publish-package export for approved content.
+- `P0-020`: Viber-first approval notification adapter.
+- `P0-021`: Gemini quota/billing/model availability follow-up.
+- `P0-022`: publication destination adapter contract and dry-run CMS payload.
+- `P0-023`: media brief export for long video, Shorts and Veo-ready prompts.
+- `P0-024`: real Viber bot onboarding and webhook setup runbook.
+- `P0-025`: CMS adapter selection settings and publish safety gate.
+- `P0-027`: local Gemini quota governor and daily usage ledger.
+- `P0-028`: hybrid source provider foundation for Tavily-first research corpus collection.
+- `P0-029`: browser/JS price monitoring foundation for known URLs.
+- `P0-030`: market price intelligence foundation for product groups.
+- `P0-031`: notification policies for market trend events.
+- `P0-032`: market trend digest delivery through notification adapters.
+- `P0-033`: immediate market trend alerts through notification adapters.
+- `P0-034`: market digest batching and run-once scheduling command.
+- `P0-035`: structured product content profiles for generated ecommerce cards.
+- `P0-036`: shared scheduler foundation for recurring operations.
+- `P0-037`: operator console market and scheduler views.
+- `P0-038`: content opportunity discovery for article topics.
+- `P0-039`: infographic intelligence architecture and prompt library.
+- `P0-041`: video infographic storyboard architecture and prompt library.
+- `P0-043`: customer pain research architecture and prompt integration.
+- `P0-046`: program map and API key matrix for testing.
+- `P0-047`: functional inventory and local mock stability suite.
+- `P0-048`: realistic product-card smoke for captured ALTEK ALT-63 fixture.
+- `P0-049`: realistic solar-category smoke from captured Elektronom category fixtures.
+- `P0-050`: realistic solar-category article smoke.
+- `P0-051`: article production architecture for data packs, article briefs and image briefs.
+- `P0-052`: frontend Article Studio MVP with live article checkpoints, editable article brief, editor notes, image/infographic brief and publication handoff preview.
+- `P0-053`: durable Article Studio review checkpoints in backend with `GET/PUT/DELETE /api/tasks/{task_id}/article-checkpoints`.
+- `P0-054`: Article Studio checkpoints are injected into draft/rewrite generation context and exported inside publish packages.
+- `P0-055`: direct Article Studio rewrite loop from saved editor notes without rerunning research.
+- `P0-056`: Article Studio rewrite diff with green added lines and red removed lines.
+- `P0-057`: accept/reject controls for rewritten final draft versions; rejected final drafts are skipped during publish-package export.
+- `P0-058`: Article Studio image asset MVP with mock generation, approve/reject review and publish-package export.
+- `P0-059`: CMS preview inserts article image/infographic placeholders and exposes `media_assets_json`.
+- `P0-060`: image upload/generator adapter contract for article assets with mock SVG generation and manual URI attach.
+- `P0-061`: Gemini image provider wiring behind `IMAGE_GENERATION_PROVIDER=gemini`.
+- `P0-062`: API settings manager for keys, providers, task models and Viber runtime configuration.
+
+Next backlog:
+
+- `P0-044`: pain profile backend.
+- `P0-040`: infographic projects and data-pack backend.
+- `P0-042`: video infographic projects and storyboard backend.
+- Scheduler executors for future stock sync and supplier price sync.
+- Query planner and source corpus dedupe for multi-query marketing research.
+- `P0-026`: media brief approval workflow before Veo generation.
+- Add visual history of accepted/rejected rewrite versions.
+
+## Safety Defaults
+
+Real publishing and real video generation remain disabled:
+
+```text
+ENABLE_REAL_PUBLISHING=false
+ENABLE_REAL_VIDEO_GENERATION=false
+```
