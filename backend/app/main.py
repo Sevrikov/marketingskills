@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from app.api.agent_skills import router as agent_skills_router
 from app.api.content_opportunities import router as content_opportunities_router
 from app.api.content_tasks import router as content_tasks_router
+from app.api.infographics import router as infographics_router
 from app.api.pain_profiles import router as pain_profiles_router
 from app.api.price_monitor import router as price_monitor_router
 from app.api.product_content_profiles import router as product_content_profiles_router
@@ -53,6 +54,7 @@ app.include_router(products_router)
 app.include_router(product_content_profiles_router)
 app.include_router(content_opportunities_router)
 app.include_router(content_tasks_router)
+app.include_router(infographics_router)
 app.include_router(pain_profiles_router)
 app.include_router(price_monitor_router)
 app.include_router(scheduler_router)

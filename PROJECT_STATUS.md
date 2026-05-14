@@ -4,7 +4,7 @@
 
 ## Current Stage
 
-Development is in Sprint 0 foundation. Current active queue item: infographic data-pack backend followed by video storyboard backend and optional real provider smoke testing from API Settings.
+Development is in Sprint 0 foundation. Current active queue item: video storyboard backend followed by operator-console UI for pain profiles and infographics.
 
 ## Completed
 
@@ -251,6 +251,18 @@ Development is in Sprint 0 foundation. Current active queue item: infographic da
   - `pain_profile` JSON includes scope, primary pain, secondary pains, use contexts, trigger events, proof map, objections, content guidance, do-not-claim rules, sources and missing/risky data;
   - approved product pain profiles are injected into draft generation as `Approved pain_profile`;
   - tests cover API generation/approval and draft-pipeline injection.
+- Added infographic projects and data-pack backend:
+  - `infographic_projects`, `infographic_data_packs` and `infographic_design_briefs` model/tables;
+  - `POST /api/infographics/projects`;
+  - `GET /api/infographics/projects`;
+  - `GET /api/infographics/projects/{project_id}`;
+  - `POST /api/infographics/projects/{project_id}/generate-data-pack`;
+  - `GET /api/infographics/projects/{project_id}/data-packs`;
+  - `POST /api/infographics/projects/{project_id}/generate-brief`;
+  - `GET /api/infographics/projects/{project_id}/design-briefs`;
+  - data pack includes product-card extraction plan, research query plan for product cards/images/article placement/video presentation, content placement plan, pictogram system, brand style block, pain profile summary, claims, sources and missing/risky data;
+  - design brief includes dimensions, required visual blocks, chart/table specs, pictogram system, source rules and prompt pack for browser design tools;
+  - tests cover project creation, data-pack generation, prompt-pack generation and missing-data-pack conflict.
 - Added Viber-first approval notification layer:
   - neutral `NotificationAdapter` contract;
   - mock notification adapter for local development;
@@ -552,9 +564,9 @@ Gemini test key handling:
 
 ## Next Recommended Tasks
 
-1. Implement `P0-040`: infographic projects and data-pack backend.
-2. Implement `P0-042`: video infographic projects and storyboard backend.
-3. Add operator-console UI for pain profile generation, review and approval.
+1. Implement `P0-042`: video infographic projects and storyboard backend.
+2. Add operator-console UI for pain profile and infographic project generation, review and approval.
+3. Connect infographic data packs to Article Studio asset slots and CMS preview selection.
 4. Optionally run one guarded Gemini image smoke test after confirming the active key has image quota.
 5. Continue with scheduler executors for future stock sync and supplier price sync.
 
@@ -598,6 +610,7 @@ Current completed backlog:
 - `P0-037`: operator console market and scheduler views.
 - `P0-038`: content opportunity discovery for article topics.
 - `P0-039`: infographic intelligence architecture and prompt library.
+- `P0-040`: infographic projects and data-pack backend with query plan, placement plan, pictogram system, style block and browser design prompt pack.
 - `P0-041`: video infographic storyboard architecture and prompt library.
 - `P0-043`: customer pain research architecture and prompt integration.
 - `P0-044`: customer pain profile backend with generate/list/get/approve API and draft injection.
@@ -621,9 +634,9 @@ Current completed backlog:
 
 Next backlog:
 
-- `P0-040`: infographic projects and data-pack backend.
 - `P0-042`: video infographic projects and storyboard backend.
-- Pain profile operator-console UI.
+- Pain profile and infographic operator-console UI.
+- Connect infographic data packs to Article Studio asset slots and CMS preview selection.
 - Scheduler executors for future stock sync and supplier price sync.
 - Query planner and source corpus dedupe for multi-query marketing research.
 - `P0-026`: media brief approval workflow before Veo generation.
