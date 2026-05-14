@@ -1,5 +1,5 @@
-from string import Formatter
 import re
+from string import Formatter
 
 from sqlalchemy.orm import Session
 
@@ -9,6 +9,10 @@ from app.models.content_task import ContentTask, ContentTaskType
 from app.models.product import Product
 from app.models.prompt_template import PromptTemplate
 from app.services.content_drafts import create_content_draft
+from app.services.pain_profiles import (
+    get_approved_pain_profile_for_product,
+    pain_profile_prompt_context,
+)
 from app.services.skill_registry import list_agent_skills
 
 
@@ -49,16 +53,21 @@ def generate_initial_draft(
 ) -> LLMResponse:
     product = db.get(Product, task.product_id) if task.product_id else None
     skill_context = _build_skill_context(db)
+    pain_profile_context = pain_profile_prompt_context(
+        get_approved_pain_profile_for_product(db, product.id) if product else None
+    )
     variables = _build_prompt_variables(
         task,
         product,
         skill_context,
         research_report,
+        pain_profile_context,
         article_checkpoint_context,
     )
     rendered_template = render_prompt_template(prompt_template.user_template, variables)
     prompt_parts = [
         f"Active agent skills:\n{skill_context}",
+        f"Approved pain_profile:\n{pain_profile_context}",
         f"Task prompt:\n{rendered_template}",
     ]
     if article_checkpoint_context:
@@ -196,6 +205,7 @@ def _build_prompt_variables(
     product: Product | None,
     skill_context: str,
     research_report: str,
+    pain_profile_context: str,
     article_checkpoint_context: str = "",
 ) -> dict[str, str | list[str]]:
     subject = product.title if product else task.topic or "Untitled content task"
@@ -204,6 +214,7 @@ def _build_prompt_variables(
         "product": _format_product(product) if product else subject,
         "specifications": product.raw_description if product and product.raw_description else "",
         "research_report": research_report,
+        "pain_profile": pain_profile_context,
         "article_checkpoint_context": article_checkpoint_context,
         "subject": subject,
         "goal": "Create useful marketing content that is ready for human approval.",

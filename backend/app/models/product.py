@@ -11,6 +11,7 @@ from app.utils.ids import new_uuid
 if TYPE_CHECKING:
     from app.models.content_task import ContentTask
     from app.models.monitored_source import MonitoredSource
+    from app.models.pain_profile import PainProfile
     from app.models.product_content_profile import ProductContentProfile
 
 
@@ -38,4 +39,9 @@ class Product(TimestampMixin, Base):
         back_populates="product",
         cascade="all, delete-orphan",
         uselist=False,
+    )
+    pain_profiles: Mapped[list["PainProfile"]] = relationship(
+        back_populates="product",
+        cascade="all, delete-orphan",
+        order_by="PainProfile.created_at",
     )

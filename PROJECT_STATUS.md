@@ -4,7 +4,7 @@
 
 ## Current Stage
 
-Development is in Sprint 0 foundation. Current active queue item: pain-profile backend followed by infographic data-pack backend and optional real provider smoke testing from API Settings.
+Development is in Sprint 0 foundation. Current active queue item: infographic data-pack backend followed by video storyboard backend and optional real provider smoke testing from API Settings.
 
 ## Completed
 
@@ -241,6 +241,16 @@ Development is in Sprint 0 foundation. Current active queue item: pain-profile b
   - write-only secret handling for Google, Tavily and Viber tokens;
   - runtime overrides for worker research/content adapters, content opportunities, image generation, CMS preview and Viber notifications;
   - operator console `API settings` tab with provider/model selectors and secret inputs.
+- Added customer pain profile backend:
+  - `pain_profiles` model/table;
+  - `POST /api/pain-profiles/generate`;
+  - `GET /api/pain-profiles`;
+  - `GET /api/pain-profiles/{profile_id}`;
+  - `POST /api/pain-profiles/{profile_id}/approve`;
+  - deterministic MVP profile builder from product data, linked task and latest research report;
+  - `pain_profile` JSON includes scope, primary pain, secondary pains, use contexts, trigger events, proof map, objections, content guidance, do-not-claim rules, sources and missing/risky data;
+  - approved product pain profiles are injected into draft generation as `Approved pain_profile`;
+  - tests cover API generation/approval and draft-pipeline injection.
 - Added Viber-first approval notification layer:
   - neutral `NotificationAdapter` contract;
   - mock notification adapter for local development;
@@ -542,9 +552,9 @@ Gemini test key handling:
 
 ## Next Recommended Tasks
 
-1. Implement `P0-044`: pain profile backend.
-2. Implement `P0-040`: infographic projects and data-pack backend.
-3. Implement `P0-042`: video infographic projects and storyboard backend.
+1. Implement `P0-040`: infographic projects and data-pack backend.
+2. Implement `P0-042`: video infographic projects and storyboard backend.
+3. Add operator-console UI for pain profile generation, review and approval.
 4. Optionally run one guarded Gemini image smoke test after confirming the active key has image quota.
 5. Continue with scheduler executors for future stock sync and supplier price sync.
 
@@ -590,6 +600,7 @@ Current completed backlog:
 - `P0-039`: infographic intelligence architecture and prompt library.
 - `P0-041`: video infographic storyboard architecture and prompt library.
 - `P0-043`: customer pain research architecture and prompt integration.
+- `P0-044`: customer pain profile backend with generate/list/get/approve API and draft injection.
 - `P0-046`: program map and API key matrix for testing.
 - `P0-047`: functional inventory and local mock stability suite.
 - `P0-048`: realistic product-card smoke for captured ALTEK ALT-63 fixture.
@@ -610,9 +621,9 @@ Current completed backlog:
 
 Next backlog:
 
-- `P0-044`: pain profile backend.
 - `P0-040`: infographic projects and data-pack backend.
 - `P0-042`: video infographic projects and storyboard backend.
+- Pain profile operator-console UI.
 - Scheduler executors for future stock sync and supplier price sync.
 - Query planner and source corpus dedupe for multi-query marketing research.
 - `P0-026`: media brief approval workflow before Veo generation.

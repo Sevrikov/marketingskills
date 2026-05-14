@@ -69,6 +69,7 @@ SEED_PROMPTS: list[PromptTemplateCreate] = [
             "Product: {product}\n"
             "Specifications: {specifications}\n"
             "Research report: {research_report}\n\n"
+            "Approved pain_profile: {pain_profile}\n\n"
             "First identify the confirmed customer pain from the research report. "
             "If it is confirmed, make it visible in the short answer, use cases, "
             "benefits, limitations and FAQ. Connect each benefit to the pain and "

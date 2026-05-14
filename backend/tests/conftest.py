@@ -25,6 +25,7 @@ from app.models import (  # noqa: F401
     market_digest_batch,
     monitored_source,
     notification_policy,
+    pain_profile,
     price_change_event,
     price_group,
     price_market_index,
