@@ -1,4 +1,5 @@
 from string import Formatter
+import re
 
 from sqlalchemy.orm import Session
 
@@ -16,6 +17,21 @@ PROMPT_BY_TASK_TYPE: dict[str, str] = {
     ContentTaskType.SEO_ARTICLE.value: "ecommerce.aeo_product_description.v1",
     ContentTaskType.RESEARCH.value: "ecommerce.aeo_product_description.v1",
     ContentTaskType.VIDEO_BRIEF.value: "ecommerce.video_brief.v1",
+}
+
+ASSET_SLOT_RE = re.compile(r"\{\{(image|infographic):([a-zA-Z0-9_-]+)\}\}")
+
+VISUAL_ASSET_SLOTS_BY_TASK_TYPE: dict[str, list[tuple[str, str]]] = {
+    ContentTaskType.PRODUCT_CARD.value: [
+        ("image:hero", "Product hero visual for the first screen."),
+        ("infographic:comparison", "Compact comparison or benefit infographic."),
+        ("image:use-case", "Use-case visual showing the buyer problem solved."),
+    ],
+    ContentTaskType.SEO_ARTICLE.value: [
+        ("image:hero", "Article hero visual tied to the buyer problem."),
+        ("infographic:comparison", "Evidence-backed comparison infographic."),
+        ("image:buyer-pain", "Visual explaining the pain, trigger, or use case."),
+    ],
 }
 
 
@@ -137,16 +153,18 @@ def generate_rewrite(
             metadata={"task_id": task.id, "prompt_template_key": prompt_template.key},
         )
     )
+    final_body, visual_slots_added = _ensure_visual_asset_slots(task, response.text)
     create_content_draft(
         db,
         task,
         kind="final",
-        body=response.text,
+        body=final_body,
         provider=response.provider,
         model=response.model,
         prompt_template=prompt_template,
         metadata_json={
             "article_checkpoint_context_included": bool(article_checkpoint_context),
+            "visual_asset_slots_added": visual_slots_added,
         },
     )
     return response
@@ -156,6 +174,21 @@ def render_prompt_template(template: str, variables: dict[str, str | list[str]])
     fields = {field for _, field, _, _ in Formatter().parse(template) if field}
     safe_variables = {field: variables.get(field, "") for field in fields}
     return template.format(**safe_variables)
+
+
+def _ensure_visual_asset_slots(task: ContentTask, body: str) -> tuple[str, list[str]]:
+    required_slots = VISUAL_ASSET_SLOTS_BY_TASK_TYPE.get(task.task_type, [])
+    if not required_slots:
+        return body, []
+
+    existing_slots = {f"{match.group(1)}:{match.group(2)}" for match in ASSET_SLOT_RE.finditer(body)}
+    missing_slots = [(slot, label) for slot, label in required_slots if slot not in existing_slots]
+    if not missing_slots:
+        return body, []
+
+    block_lines = ["", "## Visual asset slots"]
+    block_lines.extend(f"- {{{{{slot}}}}} - {label}" for slot, label in missing_slots)
+    return body.rstrip() + "\n\n" + "\n".join(block_lines), [slot for slot, _ in missing_slots]
 
 
 def _build_prompt_variables(

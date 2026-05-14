@@ -70,6 +70,8 @@ def test_worker_generates_drafts_and_waits_for_approval(db_session, tmp_path):
     assert drafts[0].metadata_json == {"skills_used": ["ecommerce-aeo-product-description"]}
     assert "Mock research report" in drafts[0].body
     assert "Collected source corpus" in drafts[0].body
+    assert "{{image:hero}}" in drafts[-1].body
+    assert "{{infographic:comparison}}" in drafts[-1].body
 
 
 def test_worker_includes_article_studio_checkpoints_in_generation(db_session, tmp_path):
@@ -104,7 +106,8 @@ def test_worker_includes_article_studio_checkpoints_in_generation(db_session, tm
     drafts = list_content_drafts(db_session, task.id)
     assert "OPERATOR_BRIEF_MARKER" in drafts[0].body
     assert "OPERATOR_BRIEF_MARKER" in drafts[-1].body
-    assert drafts[-1].metadata_json == {"article_checkpoint_context_included": True}
+    assert drafts[-1].metadata_json["article_checkpoint_context_included"] is True
+    assert "image:hero" in drafts[-1].metadata_json["visual_asset_slots_added"]
 
 
 def test_rewrite_from_article_studio_checkpoints_api(client, db_session, tmp_path):
@@ -141,7 +144,9 @@ def test_rewrite_from_article_studio_checkpoints_api(client, db_session, tmp_pat
     rewritten = response.json()
     assert rewritten["kind"] == "final"
     assert "REWRITE_NOTE_MARKER" in rewritten["body"]
-    assert rewritten["metadata_json"] == {"article_checkpoint_context_included": True}
+    assert "{{infographic:comparison}}" in rewritten["body"]
+    assert rewritten["metadata_json"]["article_checkpoint_context_included"] is True
+    assert "visual_asset_slots_added" in rewritten["metadata_json"]
     task_after_rewrite = get_content_task(db_session, task.id)
     assert task_after_rewrite is not None
     assert task_after_rewrite.status == ContentTaskStatus.WAITING_APPROVAL.value
